@@ -1,5 +1,5 @@
 use rand::Rng;
-use crate::crypto::{block2bytes, bytes2block, padding, padding_index, words2bytes};
+use crate::crypto::*;
 
 pub struct Blowfish {
     p: [u32; 18],
@@ -9,17 +9,19 @@ pub struct Blowfish {
 const BLOCK_SIZE: usize = 8;
 
 impl Blowfish {
+    /// Creates blowfish-object for passed string|&str as key.
     pub fn new_with_string<T: AsRef<str>>(key: T) -> Result<Blowfish, &'static str> {
         Blowfish::new(key.as_ref().as_bytes())
     }
 
+    /// Creates blowfish-object for passed slice as key
     pub fn new(key: &[u8]) -> Result<Blowfish, &'static str> {
         let keylen = key.len();
         if keylen < 4 || keylen > 56 {
             return Err("invalid key length");
         }
 
-        let mut bf = Blowfish{p: [0u32; 18], s: [[0u32; 256]; 4]};
+        let mut bf = Blowfish { p: [0u32; 18], s: [[0u32; 256]; 4] };
 
         for i in 0..4 {
             for j in 0..256 {
@@ -45,39 +47,48 @@ impl Blowfish {
 
         // P
         let mut b = bf.encrypt(xl, xr);
-        xl = b.0; xr = b.1;
+        xl = b.0;
+        xr = b.1;
         bf.p[0] = xl;
         bf.p[1] = xr;
         b = bf.encrypt(xl, xr);
-        xl = b.0; xr = b.1;
+        xl = b.0;
+        xr = b.1;
         bf.p[2] = xl;
         bf.p[3] = xr;
         b = bf.encrypt(xl, xr);
-        xl = b.0; xr = b.1;
+        xl = b.0;
+        xr = b.1;
         bf.p[4] = xl;
         bf.p[5] = xr;
         b = bf.encrypt(xl, xr);
-        xl = b.0; xr = b.1;
+        xl = b.0;
+        xr = b.1;
         bf.p[6] = xl;
         bf.p[7] = xr;
         b = bf.encrypt(xl, xr);
-        xl = b.0; xr = b.1;
+        xl = b.0;
+        xr = b.1;
         bf.p[8] = xl;
         bf.p[9] = xr;
         b = bf.encrypt(xl, xr);
-        xl = b.0; xr = b.1;
+        xl = b.0;
+        xr = b.1;
         bf.p[10] = xl;
         bf.p[11] = xr;
         b = bf.encrypt(xl, xr);
-        xl = b.0; xr = b.1;
+        xl = b.0;
+        xr = b.1;
         bf.p[12] = xl;
         bf.p[13] = xr;
         b = bf.encrypt(xl, xr);
-        xl = b.0; xr = b.1;
+        xl = b.0;
+        xr = b.1;
         bf.p[14] = xl;
         bf.p[15] = xr;
         b = bf.encrypt(xl, xr);
-        xl = b.0; xr = b.1;
+        xl = b.0;
+        xr = b.1;
         bf.p[16] = xl;
         bf.p[17] = xr;
 
@@ -87,7 +98,8 @@ impl Blowfish {
             let mut j = 0;
             while j < 256 {
                 b = bf.encrypt(xl, xr);
-                xl = b.0; xr = b.1;
+                xl = b.0;
+                xr = b.1;
                 bf.s[i][j] = xl;
                 bf.s[i][j + 1] = xr;
                 j += 2;
@@ -98,8 +110,7 @@ impl Blowfish {
         Ok(bf)
     }
 
-
-
+    /// Heart of the algorithm.
     fn f(&self, mut x: u32) -> u32 {
         let d = (x & 0xff) as usize;
         x = x.wrapping_shr(8);
@@ -263,7 +274,7 @@ impl Blowfish {
     /// Before encryption creates IV vector.
     pub fn encrypt_cbc(&self, input: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
         let iv = {
-            let mut buffer =[0u8; BLOCK_SIZE];
+            let mut buffer = [0u8; BLOCK_SIZE];
             rand::thread_rng().fill(&mut buffer);
             buffer.to_vec()
         };

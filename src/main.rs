@@ -15,12 +15,13 @@ fn main() {
 
     println!("------------------------------------------------------");
 
-    let x = bf.encrypt_cbc(&"Adam, Artur, Błażej, Kacpi, Nikoś".as_bytes().to_vec()).unwrap();
+    let x = bf.encrypt_cbc(&"Adam, Artur, Błażej, Kacpi, Nikoś".as_bytes().to_vec());
     println!("{:x?}", x);
-    let y = bf.decrypt_cbc(&x);
-    println!("{:?}", String::from_utf8_lossy(&y.unwrap()));
 
-
+    match bf.decrypt_cbc(&x.unwrap()) {
+        Ok(data) => println!("{:?}", String::from_utf8_lossy(&data)),
+        Err(e) => println!("{}", e)
+    }
 
     /*
     let mut sb = StringBuilder::default();
