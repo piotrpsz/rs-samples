@@ -8,18 +8,20 @@ use rs_samples::roman::roman;
 
 fn main() {
     let bf = Blowfish::new_with_string("TEST").unwrap();
-    let cipher = bf.encrypt_ecb(&"Piotr Pszczółkowski 123".as_bytes().to_vec()).unwrap();
+
+    let cipher = bf.encrypt_ecb(&"Piotr Pszczółkowski 123".as_bytes().to_vec());
     println!("{:x?}", cipher);
-    let plain = bf.decrypt_ecb(&cipher).unwrap();
-    println!("{:?}", String::from_utf8_lossy(&plain));
+    match bf.decrypt_ecb(&cipher.unwrap()) {
+        Ok(plain_text) => println!("{:?}", String::from_utf8_lossy(&plain_text)),
+        Err(e) => println!("{}", e)
+    }
 
     println!("------------------------------------------------------");
 
-    let x = bf.encrypt_cbc(&"Adam, Artur, Błażej, Kacpi, Nikoś".as_bytes().to_vec());
-    println!("{:x?}", x);
-
-    match bf.decrypt_cbc(&x.unwrap()) {
-        Ok(data) => println!("{:?}", String::from_utf8_lossy(&data)),
+    let cipher = bf.encrypt_cbc(&"Adam, Artur, Błażej, Kacpi, Nikoś".as_bytes().to_vec());
+    println!("{:x?}", cipher);
+    match bf.decrypt_cbc(&cipher.unwrap()) {
+        Ok(plain_text) => println!("{:?}", String::from_utf8_lossy(&plain_text)),
         Err(e) => println!("{}", e)
     }
 
