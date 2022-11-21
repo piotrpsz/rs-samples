@@ -1,3 +1,9 @@
+use rs_samples::roman::roman;
+
 fn main() {
-    println!("Hello, world!");
+    let v = roman::to_int("VII");
+    println!("{:?}", v);
+
+    let s = roman::to_roman(v.unwrap());
+    println!("{:?}", s);
 }
