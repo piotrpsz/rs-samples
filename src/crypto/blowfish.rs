@@ -1,4 +1,5 @@
-use crate::crypto::{block2bytes, bytes2block, padding, padding_index};
+use rand::Rng;
+use crate::crypto::{block2bytes, bytes2block, padding, padding_index, words2bytes};
 
 pub struct Blowfish {
     p: [u32; 18],
@@ -201,7 +202,7 @@ impl Blowfish {
         ((xr ^ self.p[0]), (xl ^ self.p[1]))
     }
 
-    /// Encrypts passed plain bytes (ECB mode).
+    /// Encrypts passed plain text (ECB mode).
     pub fn encrypt_ecb(&self, input: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
         if input.is_empty() {
             return Err("No data to encrypt (ECB)");
@@ -233,7 +234,7 @@ impl Blowfish {
         Ok(cipher)
     }
 
-    /// Decrypts passsed cipher bytes (ECB mode).
+    /// Decrypts passsed cipher text (ECB mode).
     pub fn decrypt_ecb(&self, cipher: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
         let nbytes = cipher.len();
         if nbytes == 0 {
@@ -249,6 +250,88 @@ impl Blowfish {
             x = bytes2block(&cipher[i..]);
             x = self.decrypt_block(x);
             block2bytes(x, &mut plain[i..]);
+            i += BLOCK_SIZE;
+        }
+
+        match padding_index(&plain) {
+            Some(idx) => Ok(plain[..idx].to_vec()),
+            _ => Ok(plain)
+        }
+    }
+
+    /// Encrypts passed 'plain text'.
+    /// Before encryption creates IV vector.
+    pub fn encrypt_cbc(&self, input: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
+        let iv = {
+            let mut buffer =[0u8; BLOCK_SIZE];
+            rand::thread_rng().fill(&mut buffer);
+            buffer.to_vec()
+        };
+        self.encrypt_cbc_iv(input, &iv)
+    }
+
+    /// Encrypts 'plain text' with passed IV vector (CBC mode).
+    pub fn encrypt_cbc_iv(&self, input: &Vec<u8>, iv: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
+        if iv.len() != BLOCK_SIZE {
+            return Err("(CBC) invalid IV vector length");
+        }
+        if input.is_empty() {
+            return Err("(CBC) nothing to encrypt");
+        }
+
+        // create 'plain text' bufer from input
+        // with padding if needed
+        let plain = {
+            let mut buffer: Vec<u8> = Vec::new();
+            buffer.extend(input);
+            let n = buffer.len() % BLOCK_SIZE;
+            if n != 0 {
+                buffer.extend(padding(BLOCK_SIZE - n));
+            }
+            buffer
+        };
+        let nbytes = plain.len();
+
+        // create 'cipher text' buffer
+        // with IV vector as first block.
+        let mut cipher = {
+            let mut buffer: Vec<u8> = Vec::new();
+            buffer.resize(nbytes + BLOCK_SIZE, 0);
+            buffer[0..BLOCK_SIZE].copy_from_slice(iv);
+            buffer
+        };
+
+        let mut i: usize = 0;
+        let mut x = bytes2block(&cipher[..]);
+
+        while i < nbytes {
+            let tmp = bytes2block(&plain[i..]);
+            x = self.encrypt(tmp.0 ^ x.0, tmp.1 ^ x.1);
+            block2bytes(x, &mut cipher[(i + BLOCK_SIZE)..]);
+            i += BLOCK_SIZE;
+        }
+
+        // OK
+        Ok(cipher)
+    }
+
+    pub fn decrypt_cbc(&self, cipher: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
+        let nbytes = cipher.len();
+        if nbytes < (2 * BLOCK_SIZE) {
+            return Err("(CBC) cipher data invalid size");
+        }
+
+        let mut plain: Vec<u8> = Vec::new();
+        plain.resize(nbytes - BLOCK_SIZE, 0);
+
+        let mut i = BLOCK_SIZE;
+        let mut p = bytes2block(&cipher[..]);
+        while i < nbytes {
+            let x = bytes2block(&cipher[i..]);
+            let tmp = x;
+            let c = self.decrypt_block(x);
+            words2bytes(c.0 ^ p.0, c.1 ^ p.1, &mut plain[(i - BLOCK_SIZE)..]);
+            p = tmp;
             i += BLOCK_SIZE;
         }
 
