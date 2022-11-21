@@ -1,4 +1,3 @@
-use crate::builder::string::BytesCovertible;
 use crate::crypto::{block2bytes, bytes2block, padding, padding_index};
 
 pub struct Blowfish {
