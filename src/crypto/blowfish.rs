@@ -10,7 +10,7 @@ const BLOCK_SIZE: usize = 8;
 
 impl Blowfish {
     pub fn new_with_string<T: AsRef<str>>(key: T) -> Result<Blowfish, &'static str> {
-        Blowfish::new(&key.as_ref().as_bytes())
+        Blowfish::new(key.as_ref().as_bytes())
     }
 
     pub fn new(key: &[u8]) -> Result<Blowfish, &'static str> {
