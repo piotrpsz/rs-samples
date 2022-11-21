@@ -1,5 +1,5 @@
 #![allow(unused_imports)]
-use rs_samples::builder::StringBuilder::StringBuilder;
+use rs_samples::builder::string::StringBuilder;
 use rs_samples::roman::roman;
 
 fn main() {
