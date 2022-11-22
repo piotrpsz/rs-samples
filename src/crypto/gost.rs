@@ -29,7 +29,7 @@ impl Gost {
 
     pub fn new(key: &[u8]) -> Result<Gost, &'static str> {
         if key.len() != KEY_SIZE {
-            return Err("(GOST) invalid key size");
+            return Err("(Gost) invalid key size");
         }
 
         let mut k = [0u32; 8];
@@ -110,19 +110,19 @@ impl Gost {
         }
     }
 
-    /// Encrypts passed 'plain text'.
+    /// Encrypts passed plain-text.
     /// Before encryption creates IV vector.
     pub fn encrypt_cbc(&self, input: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
         self.encrypt_cbc_iv(input, &random_bytes(BLOCK_SIZE))
     }
 
-    /// Encrypts 'plain text' with passed IV vector (CBC mode).
+    /// Encrypts plain-text with passed IV vector.
     pub fn encrypt_cbc_iv(&self, input: &Vec<u8>, iv: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
         if iv.len() != BLOCK_SIZE {
-            return Err("(CBC) invalid IV vector length");
+            return Err("(Gost:CBC) invalid size of IV vector");
         }
         if input.is_empty() {
-            return Err("(CBC) nothing to encrypt");
+            return Err("(Gost:CBC) nothing to encrypt");
         }
 
         let plain = align_to_block(input, BLOCK_SIZE);
@@ -142,13 +142,14 @@ impl Gost {
         Ok(cipher)
     }
 
-    pub fn decrypt_cbc(&self, cipher: &Vec<u8>) -> Result<Vec<u8>, String> {
+    /// Decrypts passed cipher-text.
+    pub fn decrypt_cbc(&self, cipher: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
         let nbytes = cipher.len();
         if nbytes <= BLOCK_SIZE {
-            return  Err("cipher data size is to short".to_string());
+            return  Err("(Gost::CBC) cipher data size is to short");
         }
-        let mut plain: Vec<u8> = Vec::new();
-        plain.resize(nbytes - BLOCK_SIZE, 0);
+
+        let mut plain: Vec<u8> = cleared_buffer(nbytes - BLOCK_SIZE);
 
         let mut p = bytes2block(&cipher[..]);
         let mut i = BLOCK_SIZE;
@@ -172,6 +173,11 @@ impl Gost {
         }
     }
 
+    /****************************************************************
+    *                                                               *
+    *                 P R I V A T E   M E T H O D S                 *
+    *                                                               *
+    ****************************************************************/
 
     /// Encrypts plain tuple (2xu32).
     /// Returns encryptet tuple (2xu32).
@@ -222,7 +228,7 @@ impl Gost {
     }
 
     /// Decrypts cipher tuple (2xu32)
-    pub fn decrypt_block(&self, x: (u32, u32)) -> (u32, u32) {
+    fn decrypt_block(&self, x: (u32, u32)) -> (u32, u32) {
         self.decrypt(x.0, x.1)
     }
 
@@ -268,7 +274,6 @@ impl Gost {
         (xr, xl)
     }
 
-
     /// Heart of the algorithm.
     fn f(&self, x: u32) -> u32 {
         let i0 = x.wrapping_shr(24) & 0xff;
@@ -284,5 +289,40 @@ impl Gost {
 
         let x = w0 | w1 | w2 | w3;
         x.wrapping_shl(11) | x.wrapping_shr(32 - 11)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_block() {
+        let key = vec![0u8, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, 7, 0, 0, 0];
+        let gt = Gost::new(&key);
+        assert!(gt.is_ok());
+        let gt = gt.unwrap();
+
+        let plain = [
+            (0u32, 0u32),
+            (1u32, 0u32),
+            (0u32, 1u32),
+            (0xffffffffu32, 0xffffffffu32)
+        ];
+        let expected = [
+            (0x37ef7123u32, 0x361b7184u32),
+            (0x1159d751u32, 0xff9b91d2u32),
+            (0xc79c4ef4u32, 0x27ac9149u32),
+            (0xf9709623u32, 0x56ad8d77u32)
+        ];
+        let mut i = 0usize;
+        while i < 4 {
+            let x = plain[i];
+            let encrypted = gt.encrypt_block(plain[i]);
+            assert_eq!(expected[i], encrypted);
+            let decrypted = gt.decrypt_block(encrypted);
+            assert_eq!(plain[i], decrypted);
+            i += 1;
+        }
     }
 }

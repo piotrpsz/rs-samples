@@ -269,13 +269,13 @@ impl Blowfish {
         }
     }
 
-    /// Encrypts passed 'plain text'.
+    /// Encrypts passed plain-text.
     /// Before encryption creates IV vector.
     pub fn encrypt_cbc(&self, input: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
         self.encrypt_cbc_iv(input, &random_bytes(BLOCK_SIZE))
     }
 
-    /// Encrypts 'plain text' with passed IV vector (CBC mode).
+    /// Encrypts plain-text with passed IV vector.
     pub fn encrypt_cbc_iv(&self, input: &Vec<u8>, iv: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
         if iv.len() != BLOCK_SIZE {
             return Err("(CBC) invalid IV vector length");
