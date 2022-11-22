@@ -4,9 +4,29 @@ use std::io::Read;
 use rs_samples::builder::string::{BytesCovertible, StringBuilder};
 // use rs_samples::crypto::blowfish;
 use rs_samples::crypto::blowfish::Blowfish;
+// use rs_samples::crypto::gost;
+use rs_samples::crypto::gost::Gost;
 use rs_samples::roman::roman;
 
 fn main() {
+    match Gost::with_key_as_text("12345678901234567890123456789012") {
+        Ok(gt) => {
+            match gt.encrypt_ecb(&"Piotr Pszczółkowski X".as_bytes().to_vec()) {
+                Ok(cipher) => {
+                    println!("{:?}", cipher);
+                    match gt.decrypt_ecb(&cipher) {
+                        Ok(plain_text) => println!("{:?}", String::from_utf8_lossy(&plain_text)),
+                        Err(e) => println!("{}", e)
+                    }
+                },
+                Err(e) => println!("{}", e)
+            }
+        },
+        Err(e) => println!("{}", e)
+    }
+
+
+    /*
     let bf = Blowfish::new_with_string("TEST").unwrap();
 
     let cipher = bf.encrypt_ecb(&"Piotr Pszczółkowski 123".as_bytes().to_vec());
@@ -18,12 +38,14 @@ fn main() {
 
     println!("------------------------------------------------------");
 
-    let cipher = bf.encrypt_cbc(&"Adam, Artur, Błażej, Kacpi, Nikoś".as_bytes().to_vec());
+    let cipher = bf.encrypt_cbc(&"Adam, Artur, Błażej, Kacpi, Nikoś, X".as_bytes().to_vec());
     println!("{:x?}", cipher);
     match bf.decrypt_cbc(&cipher.unwrap()) {
         Ok(plain_text) => println!("{:?}", String::from_utf8_lossy(&plain_text)),
         Err(e) => println!("{}", e)
     }
+    */
+
 
     /*
     let mut sb = StringBuilder::default();

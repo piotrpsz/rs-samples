@@ -1,4 +1,15 @@
+use rand::Rng;
+
 pub mod blowfish;
+pub mod gost;
+
+fn random_bytes(n: usize) -> Vec<u8> {
+    let mut buffer: Vec<u8> = Vec::with_capacity(n);
+    buffer.resize(n, 0);
+
+    rand::thread_rng().fill(&mut buffer[..]);
+    buffer
+}
 
 /// Creates padding vector.
 fn padding(nbytes: usize) -> Vec<u8> {

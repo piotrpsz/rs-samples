@@ -1,4 +1,3 @@
-use rand::Rng;
 use crate::crypto::*;
 
 pub struct Blowfish {
@@ -273,11 +272,12 @@ impl Blowfish {
     /// Encrypts passed 'plain text'.
     /// Before encryption creates IV vector.
     pub fn encrypt_cbc(&self, input: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
-        let iv = {
-            let mut buffer = [0u8; BLOCK_SIZE];
-            rand::thread_rng().fill(&mut buffer);
-            buffer.to_vec()
-        };
+        let iv = random_bytes(BLOCK_SIZE);
+            // {
+            // let mut buffer = [0u8; BLOCK_SIZE];
+            // rand::thread_rng().fill(&mut buffer);
+            // buffer.to_vec()
+        // };
         self.encrypt_cbc_iv(input, &iv)
     }
 
