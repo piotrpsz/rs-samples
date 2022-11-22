@@ -3,3 +3,4 @@ small implementations of different ideas
 - roman numbers,
 - string builder,
 - blowfish encyption/decryption
+- gost encryptio/decryption
