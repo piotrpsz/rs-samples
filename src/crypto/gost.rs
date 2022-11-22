@@ -73,24 +73,13 @@ impl Gost {
             return Err("(GOST-ECB) nothing to encrypt");
         }
 
-        let plain = {
-            let mut buffer = Vec::new();
-            buffer.extend(input);
-            let n = buffer.len() % BLOCK_SIZE;
-            if n != 0 {
-                buffer.extend(padding(BLOCK_SIZE - n));
-            }
-            buffer
-        };
+        let plain = align_to_block(input, BLOCK_SIZE);
         let nbytes = plain.len();
-
-        let mut cipher = Vec::with_capacity(nbytes);
-        cipher.resize(nbytes, 0);
+        let mut cipher = cleared_buffer(nbytes);
 
         let mut i = 0usize;
         while i < nbytes {
-            let x = bytes2block(&plain[i..]);
-            let x = self.encrypt_block(x);
+            let x = self.encrypt_block(bytes2block(&plain[i..]));
             block2bytes(x, &mut cipher[i..]);
             i += BLOCK_SIZE;
         }
@@ -110,8 +99,7 @@ impl Gost {
 
         let mut i = 0usize;
         while i < nbytes {
-            let x = bytes2block(&cipher[i..]);
-            let x = self.decrypt_block(x);
+            let x = self.decrypt_block(bytes2block(&cipher[i..]));
             block2bytes(x, &mut plain[i..]);
             i += BLOCK_SIZE;
         }
@@ -119,6 +107,68 @@ impl Gost {
         match padding_index(&plain) {
             Some(idx) => Ok(plain[..idx].to_vec()),
             _ => Ok(plain)
+        }
+    }
+
+    /// Encrypts passed 'plain text'.
+    /// Before encryption creates IV vector.
+    pub fn encrypt_cbc(&self, input: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
+        self.encrypt_cbc_iv(input, &random_bytes(BLOCK_SIZE))
+    }
+
+    /// Encrypts 'plain text' with passed IV vector (CBC mode).
+    pub fn encrypt_cbc_iv(&self, input: &Vec<u8>, iv: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
+        if iv.len() != BLOCK_SIZE {
+            return Err("(CBC) invalid IV vector length");
+        }
+        if input.is_empty() {
+            return Err("(CBC) nothing to encrypt");
+        }
+
+        let plain = align_to_block(input, BLOCK_SIZE);
+        let nbytes = plain.len();
+        let mut cipher = cleared_buffer(nbytes + BLOCK_SIZE);
+        cipher[0..BLOCK_SIZE].copy_from_slice(iv);
+
+        let mut i = 0usize;
+        let mut x = bytes2block(iv);
+        while i < nbytes {
+            let t = bytes2block(&plain[i..]);
+            x = self.encrypt(t.0 ^ x.0, t.1 ^ x.1);
+            block2bytes(x, &mut cipher[(i + BLOCK_SIZE)..]);
+            i += BLOCK_SIZE;
+        }
+
+        Ok(cipher)
+    }
+
+    pub fn decrypt_cbc(&self, cipher: &Vec<u8>) -> Result<Vec<u8>, String> {
+        let nbytes = cipher.len();
+        if nbytes <= BLOCK_SIZE {
+            return  Err("cipher data size is to short".to_string());
+        }
+        let mut plain: Vec<u8> = Vec::new();
+        plain.resize(nbytes - BLOCK_SIZE, 0);
+
+        let mut p = bytes2block(&cipher[..]);
+        let mut i = BLOCK_SIZE;
+        while i < nbytes {
+            let x = bytes2block(&cipher[i..]);
+            let t = x;
+            let c = self.decrypt_block(x);
+            words2bytes(c.0 ^ p.0, c.1 ^ p.1, &mut plain[(i - BLOCK_SIZE)..]);
+            p = t;
+            i += BLOCK_SIZE;
+        }
+
+        match padding_index(&plain) {
+            Some(idx) => {
+                let retv = plain[..idx].to_vec();
+                Ok(retv)
+            },
+            _ => {
+                Ok(plain)
+            }
         }
     }
 

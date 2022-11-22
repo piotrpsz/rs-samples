@@ -272,13 +272,7 @@ impl Blowfish {
     /// Encrypts passed 'plain text'.
     /// Before encryption creates IV vector.
     pub fn encrypt_cbc(&self, input: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
-        let iv = random_bytes(BLOCK_SIZE);
-            // {
-            // let mut buffer = [0u8; BLOCK_SIZE];
-            // rand::thread_rng().fill(&mut buffer);
-            // buffer.to_vec()
-        // };
-        self.encrypt_cbc_iv(input, &iv)
+        self.encrypt_cbc_iv(input, &random_bytes(BLOCK_SIZE))
     }
 
     /// Encrypts 'plain text' with passed IV vector (CBC mode).
@@ -290,31 +284,16 @@ impl Blowfish {
             return Err("(CBC) nothing to encrypt");
         }
 
-        // create 'plain text' bufer from input
-        // with padding if needed
-        let plain = {
-            let mut buffer: Vec<u8> = Vec::new();
-            buffer.extend(input);
-            let n = buffer.len() % BLOCK_SIZE;
-            if n != 0 {
-                buffer.extend(padding(BLOCK_SIZE - n));
-            }
-            buffer
-        };
+        // create plain-text bufer from input with padding if needed
+        let plain = align_to_block(input, BLOCK_SIZE);
         let nbytes = plain.len();
-
-        // create 'cipher text' buffer
+        // create cipher-text buffer
         // with IV vector as first block.
-        let mut cipher = {
-            let mut buffer: Vec<u8> = Vec::new();
-            buffer.resize(nbytes + BLOCK_SIZE, 0);
-            buffer[0..BLOCK_SIZE].copy_from_slice(iv);
-            buffer
-        };
+        let mut cipher = cleared_buffer(nbytes + BLOCK_SIZE);
+        cipher[0..BLOCK_SIZE].copy_from_slice(iv);
 
         let mut i: usize = 0;
         let mut x = bytes2block(&cipher[..]);
-
         while i < nbytes {
             let tmp = bytes2block(&plain[i..]);
             x = self.encrypt(tmp.0 ^ x.0, tmp.1 ^ x.1);
