@@ -180,13 +180,13 @@ impl Gost {
     ****************************************************************/
 
     /// Encrypts plain tuple (2xu32).
-    /// Returns encryptet tuple (2xu32).
+    /// Returns encrypted tuple (2xu32).
     fn encrypt_block(&self, x: (u32, u32)) -> (u32, u32) {
         self.encrypt(x.0, x.1)
     }
 
     /// Encrypts two u32 words.
-    /// Returns encryptet block (tuple of 2xu32).
+    /// Returns encrypted block (tuple of 2xu32).
     fn encrypt(&self, mut xl: u32, mut xr: u32) -> (u32, u32) {
         xr ^= self.f(xl.wrapping_add(self.k[0]));
         xl ^= self.f(xr.wrapping_add(self.k[1]));
