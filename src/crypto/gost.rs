@@ -316,8 +316,7 @@ mod tests {
             (0xf9709623u32, 0x56ad8d77u32)
         ];
         let mut i = 0usize;
-        while i < 4 {
-            let x = plain[i];
+        while i < plain.len() {
             let encrypted = gt.encrypt_block(plain[i]);
             assert_eq!(expected[i], encrypted);
             let decrypted = gt.decrypt_block(encrypted);
