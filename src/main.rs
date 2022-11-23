@@ -2,13 +2,25 @@
 
 use std::io::Read;
 use rs_samples::builder::string::{BytesCovertible, StringBuilder};
-// use rs_samples::crypto::blowfish;
 use rs_samples::crypto::blowfish::Blowfish;
-// use rs_samples::crypto::gost;
 use rs_samples::crypto::gost::Gost;
 use rs_samples::roman::roman;
+use rs_samples::labirynth::server::Server;
 
 fn main() {
+    let labirynth = vec![
+        vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+        vec![1, 1, 1, 1, 0, 1, 1, 1, 0],
+        vec![0, 1, 0, 1, 0, 1, 0, 1, 0],
+        vec![0, 1, 0, 1, 1, 1, 0, 1, 0],
+        vec![0, 1, 0, 0, 0, 0, 0, 1, 0],
+        vec![0, 1, 1, 1, 1, 0, 0, 1, 0],
+        vec![0, 1, 0, 0, 1, 1, 1, 1, 1],
+        vec![0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ];
+    Server::new(labirynth);
+
+    /*
     match Gost::with_key_as_text("12345678901234567890123456789012") {
         Ok(gt) => {
             match gt.encrypt_ecb(&"Piotr Pszczółkowski test ECB".as_bytes().to_vec()) {
@@ -40,6 +52,8 @@ fn main() {
         },
         Err(e) => println!("{}", e)
     }
+
+     */
 
     // let bf = Blowfish::new_with_string("TEST").unwrap();
     //
