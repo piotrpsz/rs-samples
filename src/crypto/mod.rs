@@ -5,7 +5,7 @@ pub mod gost;
 
 /// The number of bytes to encrypt must be a multiple of the block size.
 /// If not, add padding.
-fn align_to_block(input: &Vec<u8>, block_size: usize) -> Vec<u8> {
+fn align_to_block(input: &[u8], block_size: usize) -> Vec<u8> {
     let mut buffer = Vec::new();
     buffer.extend(input);
     let n = buffer.len() % block_size;

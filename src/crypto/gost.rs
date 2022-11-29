@@ -68,7 +68,7 @@ impl Gost {
     }
 
     /// Encrypts passed plain text (ECB mode).
-    pub fn encrypt_ecb(&self, input: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
+    pub fn encrypt_ecb(&self, input: &[u8]) -> Result<Vec<u8>, &'static str> {
         if input.is_empty() {
             return Err("(GOST-ECB) nothing to encrypt");
         }
@@ -77,11 +77,11 @@ impl Gost {
         let nbytes = plain.len();
         let mut cipher = cleared_buffer(nbytes);
 
-        let mut i = 0usize;
-        while i < nbytes {
+        // let mut i = 0usize;
+        // while i < nbytes {
+        for i in (0..nbytes).step_by(BLOCK_SIZE) {
             let x = self.encrypt_block(bytes2block(&plain[i..]));
             block2bytes(x, &mut cipher[i..]);
-            i += BLOCK_SIZE;
         }
 
         Ok(cipher)
@@ -97,11 +97,9 @@ impl Gost {
         let mut plain = Vec::with_capacity(nbytes);
         plain.resize(nbytes, 0);
 
-        let mut i = 0usize;
-        while i < nbytes {
+        for i in (0..nbytes).step_by(BLOCK_SIZE) {
             let x = self.decrypt_block(bytes2block(&cipher[i..]));
             block2bytes(x, &mut plain[i..]);
-            i += BLOCK_SIZE;
         }
 
         match padding_index(&plain) {
@@ -130,13 +128,11 @@ impl Gost {
         let mut cipher = cleared_buffer(nbytes + BLOCK_SIZE);
         cipher[0..BLOCK_SIZE].copy_from_slice(iv);
 
-        let mut i = 0usize;
         let mut x = bytes2block(iv);
-        while i < nbytes {
+        for i in (0..nbytes).step_by(BLOCK_SIZE) {
             let t = bytes2block(&plain[i..]);
             x = self.encrypt(t.0 ^ x.0, t.1 ^ x.1);
             block2bytes(x, &mut cipher[(i + BLOCK_SIZE)..]);
-            i += BLOCK_SIZE;
         }
 
         Ok(cipher)
@@ -146,27 +142,35 @@ impl Gost {
     pub fn decrypt_cbc(&self, cipher: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
         let nbytes = cipher.len();
         if nbytes <= BLOCK_SIZE {
-            return  Err("(Gost::CBC) cipher data size is to short");
+            return Err("(Gost::CBC) cipher data size is to short");
         }
 
         let mut plain: Vec<u8> = cleared_buffer(nbytes - BLOCK_SIZE);
 
         let mut p = bytes2block(&cipher[..]);
-        let mut i = BLOCK_SIZE;
-        while i < nbytes {
+        for i in (BLOCK_SIZE..nbytes).step_by(BLOCK_SIZE) {
             let x = bytes2block(&cipher[i..]);
             let t = x;
             let c = self.decrypt_block(x);
             words2bytes(c.0 ^ p.0, c.1 ^ p.1, &mut plain[(i - BLOCK_SIZE)..]);
             p = t;
-            i += BLOCK_SIZE;
         }
+
+        // let mut i = BLOCK_SIZE;
+        // while i < nbytes {
+        //     let x = bytes2block(&cipher[i..]);
+        //     let t = x;
+        //     let c = self.decrypt_block(x);
+        //     words2bytes(c.0 ^ p.0, c.1 ^ p.1, &mut plain[(i - BLOCK_SIZE)..]);
+        //     p = t;
+        //     i += BLOCK_SIZE;
+        // }
 
         match padding_index(&plain) {
             Some(idx) => {
                 let retv = plain[..idx].to_vec();
                 Ok(retv)
-            },
+            }
             _ => {
                 Ok(plain)
             }
