@@ -28,28 +28,28 @@ impl Server {
             // top
             if point.y > 0 {
                 if self.data[point.y - 1][point.x] == 1 {
-                    let p = Point::new(point.x, point.y);
+                    let p = Point::new(point.x, point.y + 1);
                     data.push(self.update_exit_flag(p));
                 }
             }
             // right
             if point.x < (self.cols - 1) {
                 if self.data[point.y][point.x] == 1 {
-                    let p = Point::new(point.x, point.y);
+                    let p = Point::new(point.x + 1, point.y);
                     data.push(self.update_exit_flag(p));
                 }
             }
             // bottom
             if point.y < (self.rows - 1) {
                 if self.data[point.y + 1][point.x] == 1 {
-                    let p = Point::new(point.x, point.y);
+                    let p = Point::new(point.x, point.y + 1);
                     data.push(self.update_exit_flag(p));
                 }
             }
             // left
             if point.x > 0 {
                 if self.data[point.y][point.x - 1] == 1 {
-                    let p = Point::new(point.x, point.y);
+                    let p = Point::new(point.x - 1, point.y);
                     data.push(self.update_exit_flag(p));
                 }
             }
@@ -58,7 +58,7 @@ impl Server {
     }
 
     /// Checks if passed point is inside labirynth.
-    fn valid_point(&self, p: &Point) -> bool {
+    pub fn valid_point(&self, p: &Point) -> bool {
         if p.x < self.cols {
             if p.y < self.rows {
                 return self.data[p.y][p.x] == 1;

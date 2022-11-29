@@ -11,7 +11,7 @@ pub mod client;
 *                                                                   *
 ********************************************************************/
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Copy, Debug)]
 pub struct Point {
     x: usize,
     y: usize,
@@ -21,6 +21,10 @@ pub struct Point {
 impl Point {
     fn new(x: usize, y: usize) -> Point {
         Point { x, y, exit: false }
+    }
+
+    pub fn is_exit(&self) -> bool {
+        self.exit
     }
 
     fn from_str(text: &str) -> Option<Point> {
@@ -44,13 +48,22 @@ impl Point {
     }
 }
 
+impl Clone for Point {
+    fn clone(&self) -> Self {
+        Point{x: self.x, y: self.y, exit: self.exit}
+    }
+}
+
+
 /********************************************************************
 *                                                                   *
 *                            R O U T E                              *
 *                                                                   *
 ********************************************************************/
 
+#[derive(Debug)]
 pub struct Route(Vec<Point>);
+
 
 impl Route {
     /// Creates new route for passed point.
@@ -61,6 +74,7 @@ impl Route {
         Route(data)
     }
 
+    /// Chekcs if passed point is already in the route.
     pub fn contains(&self, point: &Point) -> bool {
         for p in &self.0 {
             if (p.x == point.x) && (p.y == point.y) {
@@ -73,15 +87,19 @@ impl Route {
     /// Returns the last point of the route.
     /// We remember that the route is never empty.
     pub fn last_point(&self) -> Point {
-        let p = self[self.0.len() - 1];
-        Point::new(p.x, p.y)
+        let i = self.0.len() - 1;
+        let p = &self.0[i];
+        p.clone()
     }
 
-    pub fn append(&mut self, p: &Point) {
+    /// Appends next point to route.
+    pub fn append(&mut self, p: Point) {
         self.0.push(p);
     }
+}
 
-    pub fn clone(&self) -> Route {
-        self.0.cop
+impl Clone for Route {
+    fn clone(&self) -> Route {
+        Route(self.0.clone())
     }
 }
