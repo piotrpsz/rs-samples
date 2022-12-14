@@ -289,7 +289,7 @@ impl Blowfish {
         let nbytes = plain.len();
         // create cipher-text buffer
         // with IV vector as first block.
-        let mut cipher = cleared_buffer(nbytes + BLOCK_SIZE);
+        let mut cipher = zeroed_buffer(nbytes + BLOCK_SIZE);
         cipher[0..BLOCK_SIZE].copy_from_slice(iv);
 
         let mut i: usize = 0;

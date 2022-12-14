@@ -75,7 +75,7 @@ impl Gost {
 
         let plain = align_to_block(input, BLOCK_SIZE);
         let nbytes = plain.len();
-        let mut cipher = cleared_buffer(nbytes);
+        let mut cipher = zeroed_buffer(nbytes);
 
         // let mut i = 0usize;
         // while i < nbytes {
@@ -125,7 +125,7 @@ impl Gost {
 
         let plain = align_to_block(input, BLOCK_SIZE);
         let nbytes = plain.len();
-        let mut cipher = cleared_buffer(nbytes + BLOCK_SIZE);
+        let mut cipher = zeroed_buffer(nbytes + BLOCK_SIZE);
         cipher[0..BLOCK_SIZE].copy_from_slice(iv);
 
         let mut x = bytes2block(iv);
@@ -145,7 +145,7 @@ impl Gost {
             return Err("(Gost::CBC) cipher data size is to short");
         }
 
-        let mut plain: Vec<u8> = cleared_buffer(nbytes - BLOCK_SIZE);
+        let mut plain: Vec<u8> = zeroed_buffer(nbytes - BLOCK_SIZE);
 
         let mut p = bytes2block(&cipher[..]);
         for i in (BLOCK_SIZE..nbytes).step_by(BLOCK_SIZE) {

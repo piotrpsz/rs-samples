@@ -15,7 +15,7 @@ fn align_to_block(input: &[u8], block_size: usize) -> Vec<u8> {
     buffer
 }
 
-fn cleared_buffer(nbytes: usize) -> Vec<u8> {
+fn zeroed_buffer(nbytes: usize) -> Vec<u8> {
     let mut buffer = Vec::new();
     buffer.resize(nbytes, 0);
     buffer
