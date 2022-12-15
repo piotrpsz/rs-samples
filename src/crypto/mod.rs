@@ -1,5 +1,3 @@
-use rand::Rng;
-
 pub mod blowfish;
 pub mod gost;
 
@@ -22,9 +20,10 @@ fn zeroed_buffer(nbytes: usize) -> Vec<u8> {
 }
 
 fn random_bytes(n: usize) -> Vec<u8> {
-    let mut buffer: Vec<u8> = Vec::with_capacity(n);
+    let mut buffer = Vec::with_capacity(n);
     buffer.resize(n, 0);
 
+    use rand::Rng;
     rand::thread_rng().fill(&mut buffer[..]);
     buffer
 }

@@ -106,7 +106,7 @@ impl Gost {
     }
 
     /// Decrypts passsed cipher text (ECB mode).
-    pub fn decrypt_ecb(&self, cipher: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
+    pub fn decrypt_ecb(&self, cipher: &[u8]) -> Result<Vec<u8>, &'static str> {
         let nbytes = cipher.len();
         if nbytes == 0 {
             return Err("(GOST-ECB) nothing to decrypt");
@@ -128,12 +128,12 @@ impl Gost {
 
     /// Encrypts passed plain-text.
     /// Before encryption creates IV vector.
-    pub fn encrypt_cbc(&self, input: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
+    pub fn encrypt_cbc(&self, input: &[u8]) -> Result<Vec<u8>, &'static str> {
         self.encrypt_cbc_iv(input, &random_bytes(BLOCK_SIZE))
     }
 
     /// Encrypts plain-text with passed IV vector.
-    pub fn encrypt_cbc_iv(&self, input: &Vec<u8>, iv: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
+    pub fn encrypt_cbc_iv(&self, input: &[u8], iv: &[u8]) -> Result<Vec<u8>, &'static str> {
         if iv.len() != BLOCK_SIZE {
             return Err("(Gost:CBC) invalid size of IV vector");
         }
@@ -157,13 +157,13 @@ impl Gost {
     }
 
     /// Decrypts passed cipher-text.
-    pub fn decrypt_cbc(&self, cipher: &Vec<u8>) -> Result<Vec<u8>, &'static str> {
+    pub fn decrypt_cbc(&self, cipher: &[u8]) -> Result<Vec<u8>, &'static str> {
         let nbytes = cipher.len();
         if nbytes <= BLOCK_SIZE {
             return Err("(Gost::CBC) cipher data size is to short");
         }
 
-        let mut plain: Vec<u8> = zeroed_buffer(nbytes - BLOCK_SIZE);
+        let mut plain = zeroed_buffer(nbytes - BLOCK_SIZE);
 
         let mut p = bytes2block(&cipher[..]);
         for i in (BLOCK_SIZE..nbytes).step_by(BLOCK_SIZE) {
@@ -333,5 +333,42 @@ mod tests {
             assert_eq!(plain[i], decrypted);
             i += 1;
         }
+    }
+
+    #[test]
+    fn test_ecb() {
+        let key = [0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, 7, 0, 0, 0];
+        let gt = Gost::new(&key);
+        assert!(gt.is_ok());
+        let gt = gt.unwrap();
+
+        let plain = "Artur, Błażej, Jolanta i Piotr Pszczółkowscy".as_bytes();
+        let expt = [0x5cu8, 0xc8, 0x5a, 0xb2, 0xab, 0xa8, 0x58, 0x98,
+            0x52, 0x33, 0x67, 0x6c, 0x4b, 0x60, 0x25, 0x6e, 0x22, 0x4d, 0x2e,
+            0xb7, 0x59, 0xe5, 0x63, 0x27, 0x63, 0x5b, 0x61, 0xfd, 0x9b, 0xa3,
+            0x3e, 0x3c, 0xa3, 0xa5, 0xe6, 0xd9, 0x6d, 0x89, 0x14, 0x07, 0x63,
+            0x6c, 0x1d, 0x19, 0x6f, 0xc2, 0xde, 0x44];
+
+        let cipher = gt.encrypt_ecb(plain);
+        assert!(cipher.is_ok());
+        assert_eq!(cipher.unwrap(), expt);
+    }
+
+    #[test]
+    fn test_cbc() {
+        let key = [0u8, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, 7, 0, 0, 0];
+        let gt = Gost::new(&key);
+        assert!(gt.is_ok());
+        let gt = gt.unwrap();
+
+        let plain = "Yamato & Musashi".as_bytes();
+        let expt = [0xf8u8, 0xa4, 0x9e, 0x45, 0x40, 0xa5, 0x65, 0xc8,
+            0xe3, 0x78, 0x2e, 0x4, 0x30, 0x40, 0x45, 0x7a, 0x5a, 0xbf, 0xe4,
+            0xc6, 0x9a, 0x53, 0x4f, 0xce];
+        let iv = [0xf8u8, 0xa4, 0x9e, 0x45, 0x40, 0xa5, 0x65, 0xc8];
+
+        let cipher = gt.encrypt_cbc_iv(&plain, &iv);
+        assert!(cipher.is_ok());
+        assert_eq!(cipher.unwrap(), expt);
     }
 }
